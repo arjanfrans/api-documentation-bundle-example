@@ -10,7 +10,7 @@ docker build \
   --build-arg PHP_DOCKER_RELEASE=${PHP_DOCKER_RELEASE} \
   -t ${container} .
 
-docker run -it -v ${PWD}:/app \
+docker run -it -v ${PWD}/example:/app \
   --workdir /app \
   --add-host "host.docker.internal:host-gateway" \
   -p ${SERVER_PORT}:${SERVER_PORT} \

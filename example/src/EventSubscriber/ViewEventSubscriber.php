@@ -6,12 +6,12 @@ namespace App\EventSubscriber;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-final class ViewResponseListener implements EventSubscriberInterface
+final class ViewEventSubscriber implements EventSubscriberInterface
 {
     public function __construct(private readonly NormalizerInterface $normalizer, public readonly bool $autoCacheControl = false)
     {
@@ -22,15 +22,9 @@ final class ViewResponseListener implements EventSubscriberInterface
         $view = $event->getControllerResult();
 
         if (null === $view) {
-            $response = new JsonResponse('', 204);
+            $response = new JsonResponse('', Response::HTTP_NO_CONTENT);
         } else {
-            $data = $this->normalizer->normalize(
-                $view,
-                null,
-                [AbstractObjectNormalizer::SKIP_NULL_VALUES => true]
-            );
-
-            $response = new JsonResponse($data);
+            $response = new JsonResponse($this->normalizer->normalize($view));
         }
 
         $event->setResponse($response);
@@ -39,7 +33,7 @@ final class ViewResponseListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::VIEW => ['onKernelView', 30],
+            KernelEvents::VIEW => ['onKernelView'],
         ];
     }
 }

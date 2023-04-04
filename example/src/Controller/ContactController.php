@@ -32,7 +32,7 @@ final class ContactController extends AbstractController
     /**
      * @return ContactResponse[]
      */
-    #[Route('/')]
+    #[Route('/', methods: 'GET')]
     #[OA\Parameter(name: 'GetContactsRequest', in: 'query', content: new Model(type: GetContactsRequest::class), explode: true)]
     #[OA\Response(
         response: 200,
@@ -67,7 +67,9 @@ final class ContactController extends AbstractController
     }
 
     #[Route('/{id}', methods: 'POST')]
-    #[OA\RequestBody(required: true, content: new Model(type: UpdateContactRequest::class))]
+    #[OA\RequestBody(
+        required: true,
+        content: new Model(type: UpdateContactRequest::class))]
     #[OA\Response(
         response: 200,
         description: 'ContactResponse',
