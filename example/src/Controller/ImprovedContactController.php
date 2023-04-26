@@ -7,7 +7,6 @@ namespace App\Controller;
 use App\Entity\Contact;
 use App\Repository\ContactRepository;
 use App\Request\GetContactsRequest;
-use App\Request\GetOneContactRequest;
 use App\Request\UpdateContactRequest;
 use App\Response\ContactResponse;
 use Fusonic\ApiDocumentationBundle\Attribute\DocumentedRoute;
@@ -35,18 +34,6 @@ final class ImprovedContactController extends AbstractController
         $contacts = null === $request->search ? $this->contactRepository->findAll() : $this->contactRepository->search($request->search);
 
         return array_map(static fn (Contact $contact) => new ContactResponse($contact), $contacts);
-    }
-
-    #[DocumentedRoute('/{id}', methods: 'GET')]
-    public function getOneContactAction(#[FromRequest] GetOneContactRequest $request): ContactResponse
-    {
-        $contact = $this->contactRepository->find($request->id);
-
-        if (null === $contact) {
-            throw new NotFoundHttpException(sprintf('Contact with `id=%s` not found.', $request->id));
-        }
-
-        return new ContactResponse($contact);
     }
 
     #[DocumentedRoute('/{id}', methods: 'PATCH')]

@@ -4,7 +4,7 @@ An example project demonstration the [fusonic/api-documentation-bundle](https://
 with the [fusonic/http-kernel-extensions](https://github.com/fusonic/php-http-kernel-extensions).
 
 Two example controllers are included:
- * `src/ContactController.php` (using plain OpenApi and Route annotations)
+ * `src/ContactController.php` (using plain OpenApi, regular Route annotations, cumbersome validation and (de)serialization)
  * `src/ImprovedController.php` (using features from the http-kernel-extensions and api-documentation-bundle)
 
 ## Recommended development setup

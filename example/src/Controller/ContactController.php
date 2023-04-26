@@ -7,35 +7,38 @@ namespace App\Controller;
 use App\Entity\Contact;
 use App\Repository\ContactRepository;
 use App\Request\GetContactsRequest;
-use App\Request\GetOneContactRequest;
 use App\Request\UpdateContactRequest;
 use App\Response\ContactResponse;
-use Fusonic\HttpKernelExtensions\Attribute\FromRequest;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
- * Example controller not using the DocumentedRoute.
+ * Bad example of a controller.
  *
  * @deprecated
  */
 #[Route('/contacts')]
 final class ContactController extends AbstractController
 {
-    public function __construct(private readonly ContactRepository $contactRepository, private readonly ValidatorInterface $validator)
-    {
+    public function __construct(
+        private readonly ContactRepository $contactRepository,
+        private readonly ValidatorInterface $validator,
+        private readonly NormalizerInterface $normalizer
+    ) {
     }
 
-    /**
-     * @return ContactResponse[]
-     */
     #[Route('/', methods: 'GET')]
-    #[OA\Parameter(name: 'GetContactsRequest', in: 'query', content: new Model(type: GetContactsRequest::class), explode: true)]
+    #[OA\Parameter(name: 'GetContactsRequest', in: 'query', content: new Model(
+        type: GetContactsRequest::class
+    ), explode: true)]
     #[OA\Response(
         response: 200,
         description: 'ContactResponse[]',
@@ -44,35 +47,24 @@ final class ContactController extends AbstractController
             items: new OA\Items(ref: new Model(type: ContactResponse::class))
         )
     )]
-    public function getAllContactsAction(Request $request): array
+    public function getAllContactsAction(Request $request): JsonResponse
     {
         $object = new GetContactsRequest($request->get('search'));
         $errors = $this->validator->validate($object);
-        
-        if ($errors) {
-            throw $errors;
-        }
-        
-        $contacts = null === $object->search ? $this->contactRepository->findAll() : $this->contactRepository->search($object->search);
 
-        return array_map(static fn (Contact $contact) => new ContactResponse($contact), $contacts);
-    }
-
-    #[Route('/{id}', methods: 'GET')]
-    #[OA\Response(
-        response: 200,
-        description: 'ContactResponse',
-        content: new Model(type: ContactResponse::class)
-    )]
-    public function getOneContactAction(#[FromRequest] GetOneContactRequest $request): ContactResponse
-    {
-        $contact = $this->contactRepository->find($request->id);
-
-        if (null === $contact) {
-            throw new NotFoundHttpException(sprintf('Contact with `id=%s` not found.', $request->id));
+        if ($errors->count() > 0) {
+            throw new ValidationFailedException($object, $errors);
         }
 
-        return new ContactResponse($contact);
+        $contacts = null === $object->search ? $this->contactRepository->findAll() : $this->contactRepository->search(
+            $object->search
+        );
+
+        return new JsonResponse(
+            $this->normalizer->normalize(
+                array_map(static fn (Contact $contact) => new ContactResponse($contact), $contacts)
+            ), 200
+        );
     }
 
     #[Route('/{id}', methods: 'POST')]
@@ -84,17 +76,30 @@ final class ContactController extends AbstractController
         description: 'ContactResponse',
         content: new Model(type: ContactResponse::class),
     )]
-    public function updateContactAction(#[FromRequest] UpdateContactRequest $request): ContactResponse
+    public function updateContactAction(Request $request): JsonResponse
     {
-        $contact = $this->contactRepository->find($request->id);
+        $body = json_decode($request->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
-        if (null === $contact) {
-            throw new NotFoundHttpException(sprintf('Contact with `id=%s` not found.', $request->id));
+        $object = new UpdateContactRequest(
+            $body['id'],
+            $body['firstName'],
+            $body['lastName']
+        );
+        $errors = $this->validator->validate($object);
+
+        if ($errors->count() > 0) {
+            throw new ValidationFailedException($object, $errors);
         }
 
-        $contact->setFirstName($request->firstName);
-        $contact->setLastName($request->lastName);
+        $contact = $this->contactRepository->find($object->id);
 
-        return new ContactResponse($contact);
+        if (null === $contact) {
+            throw new NotFoundHttpException(sprintf('Contact with `id=%s` not found.', $object->id));
+        }
+
+        $contact->setFirstName($object->firstName);
+        $contact->setLastName($object->lastName);
+
+        return new JsonResponse($this->normalizer->normalize(new ContactResponse($contact)), 200);
     }
 }
