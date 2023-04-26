@@ -13,7 +13,7 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final class ViewEventSubscriber implements EventSubscriberInterface
 {
-    public function __construct(private readonly NormalizerInterface $normalizer, public readonly bool $autoCacheControl = false)
+    public function __construct(private readonly NormalizerInterface $normalizer)
     {
     }
 
@@ -30,6 +30,9 @@ final class ViewEventSubscriber implements EventSubscriberInterface
         $event->setResponse($response);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public static function getSubscribedEvents(): array
     {
         return [

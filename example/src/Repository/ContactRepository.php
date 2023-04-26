@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Contact;
-use App\Fixtures\ContactFixtures;
 
 final class ContactRepository
 {
@@ -16,7 +15,14 @@ final class ContactRepository
 
     public function __construct()
     {
-        $this->contacts = ContactFixtures::fixtures();
+        $this->contacts = [
+            new Contact(1, 'Juliet', 'O\' Hara'),
+            new Contact(2, 'Burton', 'Guster'),
+            new Contact(3, 'Henry', 'Spencer'),
+            new Contact(4, 'Karen', 'Vick'),
+            new Contact(5, 'Carlton', 'Lassiter'),
+            new Contact(6, 'Shawn', 'Spencer'),
+        ];
     }
 
     /**
@@ -34,7 +40,9 @@ final class ContactRepository
     {
         return array_values(
             array_filter(
-                $this->contacts, static fn (Contact $contact) => str_contains($contact->getName(),
+                $this->contacts,
+                static fn (Contact $contact) => str_contains(
+                    $contact->getName(),
                     $search
                 )
             )

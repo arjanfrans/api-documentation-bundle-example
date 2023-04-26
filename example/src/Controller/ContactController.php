@@ -14,8 +14,10 @@ use Fusonic\HttpKernelExtensions\Attribute\FromRequest;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Example controller not using the DocumentedRoute.
@@ -25,7 +27,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/contacts')]
 final class ContactController extends AbstractController
 {
-    public function __construct(private readonly ContactRepository $contactRepository)
+    public function __construct(private readonly ContactRepository $contactRepository, private readonly ValidatorInterface $validator)
     {
     }
 
@@ -42,9 +44,16 @@ final class ContactController extends AbstractController
             items: new OA\Items(ref: new Model(type: ContactResponse::class))
         )
     )]
-    public function getAllContactsAction(#[FromRequest] GetContactsRequest $request): array
+    public function getAllContactsAction(Request $request): array
     {
-        $contacts = null === $request->search ? $this->contactRepository->findAll() : $this->contactRepository->search($request->search);
+        $object = new GetContactsRequest($request->get('search'));
+        $errors = $this->validator->validate($object);
+        
+        if ($errors) {
+            throw $errors;
+        }
+        
+        $contacts = null === $object->search ? $this->contactRepository->findAll() : $this->contactRepository->search($object->search);
 
         return array_map(static fn (Contact $contact) => new ContactResponse($contact), $contacts);
     }
