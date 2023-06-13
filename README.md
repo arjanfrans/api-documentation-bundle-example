@@ -7,6 +7,8 @@ Two example controllers are included:
  * `src/ContactController.php` (using plain OpenApi, regular Route annotations, cumbersome validation and (de)serialization)
  * `src/ImprovedController.php` (using features from the http-kernel-extensions and api-documentation-bundle)
 
+ To view the documentation, navigate to `/api/docs`.
+
 ## Recommended development setup
 
 1. Install [Docker](https://www.docker.com/)
